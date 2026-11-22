@@ -1,0 +1,16 @@
+# ModelSim / QuestaSim
+work/
+**/work/
+*.wlf
+vsim.wlf
+transcript
+*.qdb
+*.qpg
+*.qtl
+*.mti
+*.vstf
+*_stacktrace.*
+tcl_stacktrace.txt
+
+# Generated top-level simulation log
+tb/nemo_top_wrapper_tb_log.txt
