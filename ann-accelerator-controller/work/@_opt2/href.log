@@ -1,9 +1,0 @@
-BEGIN 1:ann_controller:fast:work
-    state :  1:controller_inf_buffer_flow_tb:fast:work
-END 
-BEGIN 1:input_buffer:fast:work
-    buffer_reg :  1:controller_inf_buffer_flow_tb:fast:work
-END 
-BEGIN_UNRESOLVED_HREF
- 1:controller_inf_buffer_flow_tb:fast:work
-END_UNRESOLVED_HREF
