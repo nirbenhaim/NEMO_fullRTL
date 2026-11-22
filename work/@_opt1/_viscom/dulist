@@ -1,0 +1,13 @@
+2 12 ann_arch_pkg 4 fast 105 C:/Users/nir.ben-haim/OneDrive - Technion/Desktop/Nir/master/NEMO/NEMO P2/simulator + waves/NEMO_RTL/work 0 0 0 0 328 0
+2 22 parallel_interface_pkg 4 fast 105 C:/Users/nir.ben-haim/OneDrive - Technion/Desktop/Nir/master/NEMO/NEMO P2/simulator + waves/NEMO_RTL/work 0 0 0 0 65 0
+1 14 controller_pkg 4 fast 105 C:/Users/nir.ben-haim/OneDrive - Technion/Desktop/Nir/master/NEMO/NEMO P2/simulator + waves/NEMO_RTL/work 0 0 131072 0 393 0
+1 27 nemo_top_wrapper_tb_sv_unit 4 fast 105 C:/Users/nir.ben-haim/OneDrive - Technion/Desktop/Nir/master/NEMO/NEMO P2/simulator + waves/NEMO_RTL/work 0 0 0 131072 0 0
+2 16 input_buffer_pkg 4 fast 105 C:/Users/nir.ben-haim/OneDrive - Technion/Desktop/Nir/master/NEMO/NEMO P2/simulator + waves/NEMO_RTL/work 0 0 0 0 98 0
+2 26 parallel_interface_sv_unit 4 fast 105 C:/Users/nir.ben-haim/OneDrive - Technion/Desktop/Nir/master/NEMO/NEMO P2/simulator + waves/NEMO_RTL/work 0 0 0 0 0 0
+2 20 input_buffer_sv_unit 4 fast 105 C:/Users/nir.ben-haim/OneDrive - Technion/Desktop/Nir/master/NEMO/NEMO P2/simulator + waves/NEMO_RTL/work 0 0 0 0 0 0
+1 18 controller_sv_unit 4 fast 105 C:/Users/nir.ben-haim/OneDrive - Technion/Desktop/Nir/master/NEMO/NEMO P2/simulator + waves/NEMO_RTL/work 0 0 0 131072 0 0
+2 18 parallel_interface 4 fast 105 C:/Users/nir.ben-haim/OneDrive - Technion/Desktop/Nir/master/NEMO/NEMO P2/simulator + waves/NEMO_RTL/work 0 0 0 0 46 0
+2 12 input_buffer 4 fast 105 C:/Users/nir.ben-haim/OneDrive - Technion/Desktop/Nir/master/NEMO/NEMO P2/simulator + waves/NEMO_RTL/work 0 0 0 0 171 0
+1 14 ann_controller 4 fast 105 C:/Users/nir.ben-haim/OneDrive - Technion/Desktop/Nir/master/NEMO/NEMO P2/simulator + waves/NEMO_RTL/work 0 0 262144 131072 1481 0
+1 16 nemo_top_wrapper 4 fast 105 C:/Users/nir.ben-haim/OneDrive - Technion/Desktop/Nir/master/NEMO/NEMO P2/simulator + waves/NEMO_RTL/work 0 0 393216 131072 2690 0
+1 19 nemo_top_wrapper_tb 4 fast 105 C:/Users/nir.ben-haim/OneDrive - Technion/Desktop/Nir/master/NEMO/NEMO P2/simulator + waves/NEMO_RTL/work 0 0 917504 131072 6024 0
