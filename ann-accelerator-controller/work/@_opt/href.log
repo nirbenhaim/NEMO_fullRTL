@@ -1,0 +1,5 @@
+BEGIN 1:ann_controller:fast:work
+    prog_state :  1:controller_host_read_reorder_tb:fast:work
+    state :  1:controller_host_read_reorder_tb:fast:work
+    erase_state :  1:controller_host_read_reorder_tb:fast:work
+END 

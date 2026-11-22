@@ -1,0 +1,56 @@
+onerror { resume }
+quietly WaveActivateNextPane {} 0
+
+set PKG /controller_inf_buffer_flow_tb_waves_tb
+set TB  $PKG/u_tb
+set DUT $TB/dut
+
+add wave -noupdate -divider {TB_clock_reset}
+add wave -noupdate $TB/clk
+add wave -noupdate $TB/rst_n
+
+add wave -noupdate -divider {TB_command_boundary}
+add wave -noupdate -radix hex $TB/host_data
+add wave -noupdate -radix binary $TB/cmd
+add wave -noupdate -radix hex $TB/pi_data
+add wave -noupdate -radix hex $TB/address
+add wave -noupdate $TB/busy
+add wave -noupdate $TB/op_done
+
+add wave -noupdate -divider {DUT_pulse_mode_ann_core}
+add wave -noupdate -radix binary $TB/pulses
+add wave -noupdate -radix binary $TB/ann_address
+
+add wave -noupdate -divider {DUT_main_FSM}
+add wave -noupdate -radix symbolic $DUT/state
+
+add wave -noupdate -divider {DUT_PROG_pulse_timing_and_LUT}
+add wave -noupdate -radix unsigned $DUT/pulse_cnt
+add wave -noupdate -radix unsigned $DUT/pulse_total
+
+add wave -noupdate -divider {DUT_inf_collect}
+add wave -noupdate -radix unsigned $DUT/pixel_cnt
+add wave -noupdate -radix unsigned $TB/buf_reg_add
+add wave -noupdate -radix unsigned $TB/buf_reg_ctrl
+add wave -noupdate $TB/buf_read_write
+add wave -noupdate -radix hex $TB/buf_data_out
+add wave -noupdate $TB/dsa_clear
+add wave -noupdate $TB/compute_done
+
+add wave -noupdate -divider {DUT_input_buffer_data_lanes}
+add wave -noupdate -radix hex $TB/data_lanes
+add wave -noupdate -radix unsigned $TB/buf_bit_sel
+
+add wave -noupdate -divider {controller_pkg_pulse_params}
+add wave -noupdate -decimal $PKG/pkg_TREAD
+add wave -noupdate -decimal $PKG/pkg_PULSE_NUM_READ
+add wave -noupdate -decimal $PKG/pkg_TPROG
+add wave -noupdate -decimal $PKG/pkg_PULSE_NUM_PROG
+add wave -noupdate -decimal $PKG/pkg_TERASE
+add wave -noupdate -decimal $PKG/pkg_PULSE_NUM_ERASE
+add wave -noupdate -decimal $PKG/pkg_TINF
+add wave -noupdate -decimal $PKG/pkg_PULSE_NUM_INF
+
+configure wave -namecolwidth 280
+configure wave -valuecolwidth 100
+run -all

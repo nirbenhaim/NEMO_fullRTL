@@ -1,0 +1,98 @@
+// Controller Address and Pulse Verification
+// Parameters: TREAD=2, PULSE_NUM_READ=1, TPROG=5, PULSE_NUM_PROG=1
+//            TERASE=2, PULSE_NUM_ERASE=1, TINF=10, PULSE_NUM_INF=128
+// Expected: ann_address = {data[31:24], packed addr[23:8] = {PE,SA,ROW,COL}, 8'h00}
+// Binary suffix: 0b<data[31:24]>-<PE[23:22]>-<SA[21:18]>-<ROW[17:14]>-<COL[13:8]>-<rsvd[7:0]> (fields, MSB first)
+// Expected: READ->pulses=001, PROG->pulses=010, ERASE->pulses=011, INF->pulses=100
+
+=== Test 1: PROG   (PE=0,SA=0,row=0,col=0) at addr 0x0000 ===
+  PASS: ann_address 0x05000000 (0b00000101-00-0000-0000-000000-00000000)
+
+=== Test 2: READ   (PE=1,SA=3,row=7,col=6) at addr 0x4dc6 ===
+  PASS: ann_address 0x004dc600 (0b00000000-01-0011-0111-000110-00000000)
+
+=== Test 3: ERASE  (PE=0,SA=15,row=5,col=0) at addr 0x3d40 ===
+  PASS: ann_address 0x003d4000 (0b00000000-00-1111-0101-000000-00000000)
+
+=== Test 4: PROG   (PE=3,SA=15,row=15,col=63) at addr 0xffff ===
+  PASS: ann_address 0x0fffff00 (0b00001111-11-1111-1111-111111-00000000)
+
+=== Test 5: PROG   (PE=2,SA=0,row=0,col=0) at addr 0x8000 ===
+  PASS: ann_address 0x03800000 (0b00000011-10-0000-0000-000000-00000000)
+
+=== Test 6: READ   (PE=0,SA=2,row=4,col=4) at addr 0x0904 ===
+  PASS: ann_address 0x00090400 (0b00000000-00-0010-0100-000100-00000000)
+
+=== Test 7: ERASE  (PE=3,SA=0,row=7,col=0) at addr 0xc1c0 ===
+  PASS: ann_address 0x00c1c000 (0b00000000-11-0000-0111-000000-00000000)
+
+=== Test 8: PROG   (PE=1,SA=1,row=15,col=63) at addr 0x47ff ===
+  PASS: ann_address 0x0c47ff00 (0b00001100-01-0001-1111-111111-00000000)
+
+=== Test 9: READ   (PE=2,SA=11,row=4,col=32) at addr 0xad20 ===
+  PASS: ann_address 0x00ad2000 (0b00000000-10-1011-0100-100000-00000000)
+
+=== Test 10: ERASE  (PE=1,SA=2,row=1,col=0) at addr 0x4840 ===
+  PASS: ann_address 0x00484000 (0b00000000-01-0010-0001-000000-00000000)
+
+=== Test 11: PROG   (PE=0,SA=8,row=0,col=55) at addr 0x2037 ===
+  PASS: ann_address 0x07203700 (0b00000111-00-1000-0000-110111-00000000)
+
+=== Test 12: READ   (PE=3,SA=15,row=0,col=0) at addr 0xfc00 ===
+  PASS: ann_address 0x00fc0000 (0b00000000-11-1111-0000-000000-00000000)
+
+=== Test 13: ERASE  (PE=0,SA=0,row=1,col=1) at addr 0x0041 ===
+  PASS: ann_address 0x00004100 (0b00000000-00-0000-0001-000001-00000000)
+
+=== Test 14: PROG   (PE=1,SA=12,row=9,col=17) at addr 0x7251 ===
+  PASS: ann_address 0x0a725100 (0b00001010-01-1100-1001-010001-00000000)
+
+=== Test 15: READ   (PE=0,SA=3,row=10,col=42) at addr 0x0eaa ===
+  PASS: ann_address 0x000eaa00 (0b00000000-00-0011-1010-101010-00000000)
+
+=== Test 16: PROG   (PE=3,SA=1,row=3,col=2) at addr 0xc4c2 ===
+  PASS: ann_address 0x09c4c200 (0b00001001-11-0001-0011-000010-00000000)
+
+=== Test 17: READ   (PE=0,SA=9,row=2,col=61) at addr 0x24bd ===
+  PASS: ann_address 0x0024bd00 (0b00000000-00-1001-0010-111101-00000000)
+
+=== Test 18: ERASE  (PE=2,SA=6,row=14,col=4) at addr 0x9b84 ===
+  PASS: ann_address 0x009b8400 (0b00000000-10-0110-1110-000100-00000000)
+
+=== Test 19: PROG   (PE=1,SA=0,row=7,col=0) at addr 0x41c0 ===
+  PASS: ann_address 0x0e41c000 (0b00001110-01-0000-0111-000000-00000000)
+
+=== Test 20: READ   (PE=3,SA=13,row=5,col=27) at addr 0xf55b ===
+  PASS: ann_address 0x00f55b00 (0b00000000-11-1101-0101-011011-00000000)
+
+=== Test 21: ERASE  (PE=0,SA=14,row=4,col=7) at addr 0x3907 ===
+  PASS: ann_address 0x00390700 (0b00000000-00-1110-0100-000111-00000000)
+
+=== Test 22: PROG   (PE=2,SA=10,row=11,col=48) at addr 0xaaf0 ===
+  PASS: ann_address 0x06aaf000 (0b00000110-10-1010-1011-110000-00000000)
+
+=== Test 23: READ   (PE=1,SA=5,row=6,col=1) at addr 0x5581 ===
+  PASS: ann_address 0x00558100 (0b00000000-01-0101-0110-000001-00000000)
+
+=== Test 24: ERASE  (PE=3,SA=0,row=2,col=2) at addr 0xc082 ===
+  PASS: ann_address 0x00c08200 (0b00000000-11-0000-0010-000010-00000000)
+
+=== Test 25: PROG   (PE=0,SA=7,row=3,col=33) at addr 0x1ce1 ===
+  PASS: ann_address 0x0b1ce100 (0b00001011-00-0111-0011-100001-00000000)
+
+=== Test 26: READ   (PE=2,SA=4,row=13,col=7) at addr 0x9347 ===
+  PASS: ann_address 0x00934700 (0b00000000-10-0100-1101-000111-00000000)
+
+=== Test 27: ERASE  (PE=1,SA=1,row=0,col=19) at addr 0x4413 ===
+  PASS: ann_address 0x00441300 (0b00000000-01-0001-0000-010011-00000000)
+
+=== Test 28: PROG   (PE=3,SA=2,row=12,col=5) at addr 0xcb05 ===
+  PASS: ann_address 0x04cb0500 (0b00000100-11-0010-1100-000101-00000000)
+
+=== Test 29: READ   (PE=1,SA=0,row=6,col=63) at addr 0x41bf ===
+  PASS: ann_address 0x0041bf00 (0b00000000-01-0000-0110-111111-00000000)
+
+=== Test 30: ERASE  (PE=3,SA=15,row=15,col=63) at addr 0xffff ===
+  PASS: ann_address 0x00ffff00 (0b00000000-11-1111-1111-111111-00000000)
+
+=== Verification Complete (30 tests) ===

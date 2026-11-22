@@ -1,0 +1,160 @@
+Reading pref.tcl
+
+# 2025.2
+
+# ** Note: (vsim-220) 'C:/altera/25.1std/questa_fse/win64/../modelsim.ini' is used as the ini file.
+# vsim -c -do "run -all; quit" work.parallel_interface_extract_tb 
+# Start time: 18:57:54 on Nov 18,2026
+# ** Note: (vsim-3812) Design is being optimized...
+# ** Note: (vopt-220) 'C:/altera/25.1std/questa_fse/win64/../modelsim.ini' is used as the ini file.
+# ** Warning: (vopt-133) Unable to remove directory "C:/Users/nir.ben-haim/OneDrive - Technion/Desktop/Nir/master/NEMO/NEMO P2/simulator + waves/NEMO_RTL/ann-accelerator-controller/work/@_opt2/_data".
+# ** Warning: (vopt-133) Unable to remove directory "C:/Users/nir.ben-haim/OneDrive - Technion/Desktop/Nir/master/NEMO/NEMO P2/simulator + waves/NEMO_RTL/ann-accelerator-controller/work/@_opt2/_viscom".
+# Access is denied. (GetLastError() = 5)
+# ** Warning: (vopt-133) Unable to remove directory "C:/Users/nir.ben-haim/OneDrive - Technion/Desktop/Nir/master/NEMO/NEMO P2/simulator + waves/NEMO_RTL/ann-accelerator-controller/work/@_opt2".
+# Access is denied. (GetLastError() = 5)
+# ** Note: (vsim-12126) Error and warning message counts have been restored: Errors=0, Warnings=3.
+# //  Questa Altera Starter FPGA Edition-64
+# //  Version 2025.2 win64 May 31 2025
+# //
+# // Unpublished work. Copyright 2025 Siemens
+# //
+# // This material contains trade secrets or otherwise confidential information
+# // owned by Siemens Industry Software Inc. or its affiliates (collectively,
+# // "SISW"), or its licensors. Access to and use of this information is strictly
+# // limited as set forth in the Customer's applicable agreements with SISW.
+# //
+# // This material may not be copied, distributed, or otherwise disclosed outside
+# // of the Customer's facilities without the express written permission of SISW,
+# // and may not be used in any way not expressly authorized by SISW.
+# //
+# Loading sv_std.std
+# Loading work.ann_arch_pkg(fast)
+# Loading work.parallel_interface_pkg(fast)
+# Loading work.parallel_interface_sv_unit(fast)
+# Loading work.parallel_interface_extract_tb_sv_unit(fast)
+# Loading work.parallel_interface_extract_tb(fast)
+# run -all
+# ----------------------------------------
+# Parallel Interface Field Extraction Tests
+# Summary: data=host_data[31:24], addr=host_data[23:8] {PE,SA,ROW,COL}, rsvd=host_data[7:0], cmd=host_cmd.
+# ----------------------------------------
+#   Test: idle
+#     host_data hex : 0x00000000
+#     host_data bin : 00000000-00-0000-0000-000000-00000000
+#     host_cmd      : 000
+#     PI outputs    : data=0x00 addr=0x0000 cmd=000 valid=0
+#     decoded idx   : PE=0 SA=0 row=0 col=0
+#     RESULT: PASS (exp data=00 addr=0000 valid=0)
+#   Test: data 0xA5 addr=0 cmd=READ
+#     host_data hex : 0xa5000000
+#     host_data bin : 10100101-00-0000-0000-000000-00000000
+#     host_cmd      : 001
+#     PI outputs    : data=0xa5 addr=0x0000 cmd=001 valid=1
+#     decoded idx   : PE=0 SA=0 row=0 col=0
+#     RESULT: PASS (exp data=a5 addr=0000 valid=1)
+#   Test: addr decode PE=1 SA=9 ROW=5 COL=42 (arg=656a)
+#     host_data hex : 0x00656a00
+#     host_data bin : 00000000-01-1001-0101-101010-00000000
+#     host_cmd      : 001
+#     PI outputs    : data=0x00 addr=0x656a cmd=001 valid=1
+#     decoded idx   : PE=1 SA=9 row=5 col=42
+#     RESULT: PASS (exp data=00 addr=656a valid=1)
+#     RESULT: PASS (field round-trip)
+#   Test: cmd 101 (payload zero)
+#     host_data hex : 0x00000000
+#     host_data bin : 00000000-00-0000-0000-000000-00000000
+#     host_cmd      : 101
+#     PI outputs    : data=0x00 addr=0x0000 cmd=101 valid=1
+#     decoded idx   : PE=0 SA=0 row=0 col=0
+#     RESULT: PASS (exp data=00 addr=0000 valid=1)
+#   Test: host_data all 1s (rsvd != 0)
+#     host_data hex : 0xffffffff
+#     host_data bin : 11111111-11-1111-1111-111111-11111111
+#     host_cmd      : 111
+#     PI outputs    : data=0xff addr=0xffff cmd=111 valid=0
+#     decoded idx   : PE=3 SA=15 row=15 col=63
+#     RESULT: PASS (exp data=ff addr=ffff valid=0)
+#   Test: PROG packed addr (arg=FF00) data=0x0F
+#     host_data hex : 0x0fff0000
+#     host_data bin : 00001111-11-1111-1100-000000-00000000
+#     host_cmd      : 010
+#     PI outputs    : data=0x0f addr=0xff00 cmd=010 valid=1
+#     decoded idx   : PE=3 SA=15 row=12 col=0
+#     RESULT: PASS (exp data=0f addr=ff00 valid=1)
+#   Test: INF max addr PE=3 SA=15 ROW=15 COL=63 data=0xC3
+#     host_data hex : 0xc3ffff00
+#     host_data bin : 11000011-11-1111-1111-111111-00000000
+#     host_cmd      : 100
+#     PI outputs    : data=0xc3 addr=0xffff cmd=100 valid=1
+#     decoded idx   : PE=3 SA=15 row=15 col=63
+#     RESULT: PASS (exp data=c3 addr=ffff valid=1)
+#   Test: well-formed word with cmd=HIZ
+#     host_data hex : 0x5a123400
+#     host_data bin : 01011010-00-0100-1000-110100-00000000
+#     host_cmd      : 000
+#     PI outputs    : data=0x5a addr=0x1234 cmd=000 valid=0
+#     decoded idx   : PE=0 SA=4 row=8 col=52
+#     RESULT: PASS (exp data=5a addr=1234 valid=0)
+#   Test: reserved bit 0 set (ERASE)
+#     host_data hex : 0x3c042101
+#     host_data bin : 00111100-00-0001-0000-100001-00000001
+#     host_cmd      : 011
+#     PI outputs    : data=0x3c addr=0x0421 cmd=011 valid=0
+#     decoded idx   : PE=0 SA=1 row=0 col=33
+#     RESULT: PASS (exp data=3c addr=0421 valid=0)
+#   Test: reserved bit 1 set (ERASE)
+#     host_data hex : 0x3c042102
+#     host_data bin : 00111100-00-0001-0000-100001-00000010
+#     host_cmd      : 011
+#     PI outputs    : data=0x3c addr=0x0421 cmd=011 valid=0
+#     decoded idx   : PE=0 SA=1 row=0 col=33
+#     RESULT: PASS (exp data=3c addr=0421 valid=0)
+#   Test: reserved bit 2 set (ERASE)
+#     host_data hex : 0x3c042104
+#     host_data bin : 00111100-00-0001-0000-100001-00000100
+#     host_cmd      : 011
+#     PI outputs    : data=0x3c addr=0x0421 cmd=011 valid=0
+#     decoded idx   : PE=0 SA=1 row=0 col=33
+#     RESULT: PASS (exp data=3c addr=0421 valid=0)
+#   Test: reserved bit 3 set (ERASE)
+#     host_data hex : 0x3c042108
+#     host_data bin : 00111100-00-0001-0000-100001-00001000
+#     host_cmd      : 011
+#     PI outputs    : data=0x3c addr=0x0421 cmd=011 valid=0
+#     decoded idx   : PE=0 SA=1 row=0 col=33
+#     RESULT: PASS (exp data=3c addr=0421 valid=0)
+#   Test: reserved bit 4 set (ERASE)
+#     host_data hex : 0x3c042110
+#     host_data bin : 00111100-00-0001-0000-100001-00010000
+#     host_cmd      : 011
+#     PI outputs    : data=0x3c addr=0x0421 cmd=011 valid=0
+#     decoded idx   : PE=0 SA=1 row=0 col=33
+#     RESULT: PASS (exp data=3c addr=0421 valid=0)
+#   Test: reserved bit 5 set (ERASE)
+#     host_data hex : 0x3c042120
+#     host_data bin : 00111100-00-0001-0000-100001-00100000
+#     host_cmd      : 011
+#     PI outputs    : data=0x3c addr=0x0421 cmd=011 valid=0
+#     decoded idx   : PE=0 SA=1 row=0 col=33
+#     RESULT: PASS (exp data=3c addr=0421 valid=0)
+#   Test: reserved bit 6 set (ERASE)
+#     host_data hex : 0x3c042140
+#     host_data bin : 00111100-00-0001-0000-100001-01000000
+#     host_cmd      : 011
+#     PI outputs    : data=0x3c addr=0x0421 cmd=011 valid=0
+#     decoded idx   : PE=0 SA=1 row=0 col=33
+#     RESULT: PASS (exp data=3c addr=0421 valid=0)
+#   Test: reserved bit 7 set (ERASE)
+#     host_data hex : 0x3c042180
+#     host_data bin : 00111100-00-0001-0000-100001-10000000
+#     host_cmd      : 011
+#     PI outputs    : data=0x3c addr=0x0421 cmd=011 valid=0
+#     decoded idx   : PE=0 SA=1 row=0 col=33
+#     RESULT: PASS (exp data=3c addr=0421 valid=0)
+# ----------------------------------------
+# SUMMARY: 17 passed, 0 failed
+# RESULT: PASS (all 17 checks passed)
+# ** Note: $finish    : tb/Parallel_Interface/tb/parallel_interface_extract_tb.sv(149)
+#    Time: 46 ns  Iteration: 0  Instance: /parallel_interface_extract_tb
+# End time: 18:58:04 on Nov 18,2026, Elapsed time: 0:00:10
+# Errors: 0, Warnings: 3

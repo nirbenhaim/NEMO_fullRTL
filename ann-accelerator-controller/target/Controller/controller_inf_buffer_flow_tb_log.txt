@@ -1,0 +1,44 @@
+Reading pref.tcl
+
+# 2025.2
+
+# ** Note: (vsim-220) 'C:/altera/25.1std/questa_fse/win64/../modelsim.ini' is used as the ini file.
+# vsim -c -do "run -all; quit" work.controller_inf_buffer_flow_tb 
+# Start time: 19:00:11 on Nov 18,2026
+# ** Note: (vsim-3812) Design is being optimized...
+# ** Note: (vopt-220) 'C:/altera/25.1std/questa_fse/win64/../modelsim.ini' is used as the ini file.
+# ** Warning: (vopt-133) Unable to remove directory "C:/Users/nir.ben-haim/OneDrive - Technion/Desktop/Nir/master/NEMO/NEMO P2/simulator + waves/NEMO_RTL/ann-accelerator-controller/work/@_opt2/_data".
+# ** Warning: (vopt-133) Unable to remove directory "C:/Users/nir.ben-haim/OneDrive - Technion/Desktop/Nir/master/NEMO/NEMO P2/simulator + waves/NEMO_RTL/ann-accelerator-controller/work/@_opt2/_viscom".
+# Access is denied. (GetLastError() = 5)
+# ** Warning: (vopt-133) Unable to remove directory "C:/Users/nir.ben-haim/OneDrive - Technion/Desktop/Nir/master/NEMO/NEMO P2/simulator + waves/NEMO_RTL/ann-accelerator-controller/work/@_opt2".
+# Access is denied. (GetLastError() = 5)
+# ** Note: (vsim-12126) Error and warning message counts have been restored: Errors=0, Warnings=3.
+# //  Questa Altera Starter FPGA Edition-64
+# //  Version 2025.2 win64 May 31 2025
+# //
+# // Unpublished work. Copyright 2025 Siemens
+# //
+# // This material contains trade secrets or otherwise confidential information
+# // owned by Siemens Industry Software Inc. or its affiliates (collectively,
+# // "SISW"), or its licensors. Access to and use of this information is strictly
+# // limited as set forth in the Customer's applicable agreements with SISW.
+# //
+# // This material may not be copied, distributed, or otherwise disclosed outside
+# // of the Customer's facilities without the express written permission of SISW,
+# // and may not be used in any way not expressly authorized by SISW.
+# //
+# Loading sv_std.std
+# Loading work.ann_arch_pkg(fast)
+# Loading work.input_buffer_pkg(fast)
+# Loading work.input_buffer_sv_unit(fast)
+# Loading work.parallel_interface_pkg(fast)
+# Loading work.controller_pkg(fast)
+# Loading work.controller_sv_unit(fast)
+# Loading work.parallel_interface_sv_unit(fast)
+# Loading work.controller_inf_buffer_flow_tb_sv_unit(fast)
+# Loading work.controller_inf_buffer_flow_tb(fast)
+# run -all
+# ** Note: $finish    : tb/Controller/tb/regular/inf/controller_inf_buffer_flow_tb.sv(428)
+#    Time: 20024 ns  Iteration: 1  Instance: /controller_inf_buffer_flow_tb
+# End time: 19:00:20 on Nov 18,2026, Elapsed time: 0:00:09
+# Errors: 0, Warnings: 3

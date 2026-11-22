@@ -1,0 +1,65 @@
+Reading pref.tcl
+
+# 2025.2
+
+# ** Note: (vsim-220) 'C:/altera/25.1std/questa_fse/win64/../modelsim.ini' is used as the ini file.
+# vsim -c -do "run -all; quit" work.input_buffer_reset_behavior_tb 
+# Start time: 18:57:22 on Nov 18,2026
+# ** Note: (vsim-3812) Design is being optimized...
+# ** Note: (vopt-220) 'C:/altera/25.1std/questa_fse/win64/../modelsim.ini' is used as the ini file.
+# ** Warning: (vopt-133) Unable to remove directory "C:/Users/nir.ben-haim/OneDrive - Technion/Desktop/Nir/master/NEMO/NEMO P2/simulator + waves/NEMO_RTL/ann-accelerator-controller/work/@_opt/_data".
+# ** Warning: (vopt-133) Unable to remove directory "C:/Users/nir.ben-haim/OneDrive - Technion/Desktop/Nir/master/NEMO/NEMO P2/simulator + waves/NEMO_RTL/ann-accelerator-controller/work/@_opt/_viscom".
+# Access is denied. (GetLastError() = 5)
+# ** Warning: (vopt-133) Unable to remove directory "C:/Users/nir.ben-haim/OneDrive - Technion/Desktop/Nir/master/NEMO/NEMO P2/simulator + waves/NEMO_RTL/ann-accelerator-controller/work/@_opt".
+# Access is denied. (GetLastError() = 5)
+# ** Note: (vsim-12126) Error and warning message counts have been restored: Errors=0, Warnings=3.
+# //  Questa Altera Starter FPGA Edition-64
+# //  Version 2025.2 win64 May 31 2025
+# //
+# // Unpublished work. Copyright 2025 Siemens
+# //
+# // This material contains trade secrets or otherwise confidential information
+# // owned by Siemens Industry Software Inc. or its affiliates (collectively,
+# // "SISW"), or its licensors. Access to and use of this information is strictly
+# // limited as set forth in the Customer's applicable agreements with SISW.
+# //
+# // This material may not be copied, distributed, or otherwise disclosed outside
+# // of the Customer's facilities without the express written permission of SISW,
+# // and may not be used in any way not expressly authorized by SISW.
+# //
+# Loading sv_std.std
+# Loading work.ann_arch_pkg(fast)
+# Loading work.input_buffer_pkg(fast)
+# Loading work.input_buffer_sv_unit(fast)
+# Loading work.input_buffer_reset_behavior_tb_sv_unit(fast)
+# Loading work.input_buffer_reset_behavior_tb(fast)
+# run -all
+# ----------------------------------------------------
+# Input Buffer Reset Behavior Test (256 entries, 256 lanes)
+# ----------------------------------------------------
+# A) Reset while DATA_LOAD is active
+#   PASS: addr 20 / 255 written before reset
+#   PASS: addr 20 cleared to 0 after reset during load
+#   PASS: all 256 entries read 0x00 after reset during load
+# B) Full 256-entry load, lane gating and bit-serial baseline before reset
+#   PASS: data_lanes = 0 in CTRL_DATA_LOAD
+#   PASS: data_lanes = 0 in CTRL_WEIGHT_READ
+#   PASS: data_lanes = 0 in CTRL_IDLE
+#   PASS: bit-serial plane 0 matches loaded bytes on all 256 lanes before reset
+# C) Reset while COMPUTE/bit-serial is active
+#   PASS: bit-serial plane 3 matches loaded bytes just before reset
+#   PASS: data_lanes forced low during reset
+#   PASS: data_lanes all 0 for every bit-plane after reset (still in COMPUTE)
+#   PASS: buffer content cleared after reset during compute
+#   PASS: all 256 entries read 0x00 after reset during compute
+# 
+# ** Note: $finish    : tb/Input_Buffer/tb/input_buffer_reset_behavior_tb.sv(280)
+#    Time: 3286 ns  Iteration: 0  Instance: /input_buffer_reset_behavior_tb
+# End time: 18:57:30 on Nov 18,2026, Elapsed time: 0:00:08
+# Errors: 0, Warnings: 3
+# //==============================================================================
+# // TB REPORT  input_buffer_reset_behavior_tb
+# // Reset during CTRL_DATA_LOAD and during COMPUTE/bit-serial (256 entries, 256 lanes)
+# //==============================================================================
+# SUMMARY: 12 passed, 0 failed
+# RESULT: PASS

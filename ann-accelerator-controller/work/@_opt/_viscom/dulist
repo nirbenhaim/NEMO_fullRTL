@@ -1,0 +1,12 @@
+1 12 ann_arch_pkg 4 fast 132 C:/Users/nir.ben-haim/OneDrive - Technion/Desktop/Nir/master/NEMO/NEMO P2/simulator + waves/NEMO_RTL/ann-accelerator-controller/work 0 0 0 0 328 0
+1 22 parallel_interface_pkg 4 fast 132 C:/Users/nir.ben-haim/OneDrive - Technion/Desktop/Nir/master/NEMO/NEMO P2/simulator + waves/NEMO_RTL/ann-accelerator-controller/work 0 0 0 0 65 0
+1 14 controller_pkg 4 fast 132 C:/Users/nir.ben-haim/OneDrive - Technion/Desktop/Nir/master/NEMO/NEMO P2/simulator + waves/NEMO_RTL/ann-accelerator-controller/work 0 0 131072 0 393 0
+1 16 input_buffer_pkg 4 fast 132 C:/Users/nir.ben-haim/OneDrive - Technion/Desktop/Nir/master/NEMO/NEMO P2/simulator + waves/NEMO_RTL/ann-accelerator-controller/work 0 0 0 0 98 0
+1 39 controller_host_read_reorder_tb_sv_unit 4 fast 132 C:/Users/nir.ben-haim/OneDrive - Technion/Desktop/Nir/master/NEMO/NEMO P2/simulator + waves/NEMO_RTL/ann-accelerator-controller/work 0 0 0 131072 0 0
+1 26 parallel_interface_sv_unit 4 fast 132 C:/Users/nir.ben-haim/OneDrive - Technion/Desktop/Nir/master/NEMO/NEMO P2/simulator + waves/NEMO_RTL/ann-accelerator-controller/work 0 0 0 0 0 0
+1 18 controller_sv_unit 4 fast 132 C:/Users/nir.ben-haim/OneDrive - Technion/Desktop/Nir/master/NEMO/NEMO P2/simulator + waves/NEMO_RTL/ann-accelerator-controller/work 0 0 0 131072 0 0
+1 20 input_buffer_sv_unit 4 fast 132 C:/Users/nir.ben-haim/OneDrive - Technion/Desktop/Nir/master/NEMO/NEMO P2/simulator + waves/NEMO_RTL/ann-accelerator-controller/work 0 0 0 0 0 0
+1 18 parallel_interface 4 fast 132 C:/Users/nir.ben-haim/OneDrive - Technion/Desktop/Nir/master/NEMO/NEMO P2/simulator + waves/NEMO_RTL/ann-accelerator-controller/work 0 0 0 0 46 0
+1 14 ann_controller 4 fast 132 C:/Users/nir.ben-haim/OneDrive - Technion/Desktop/Nir/master/NEMO/NEMO P2/simulator + waves/NEMO_RTL/ann-accelerator-controller/work 0 0 262144 131072 1481 0
+1 12 input_buffer 4 fast 132 C:/Users/nir.ben-haim/OneDrive - Technion/Desktop/Nir/master/NEMO/NEMO P2/simulator + waves/NEMO_RTL/ann-accelerator-controller/work 0 0 0 0 171 0
+1 31 controller_host_read_reorder_tb 4 fast 132 C:/Users/nir.ben-haim/OneDrive - Technion/Desktop/Nir/master/NEMO/NEMO P2/simulator + waves/NEMO_RTL/ann-accelerator-controller/work 0 0 393216 131072 2699 0

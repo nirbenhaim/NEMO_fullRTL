@@ -1,0 +1,388 @@
+//------------------------------------------------------------------------------
+// Compact Program-Verify TB (10 weights) for fast waveform bring-up.
+// Covers: verify match (equal), read<expected (re-PROG), read>expected (ERASE->PROG),
+// and idx5 forced ERASE-recovery looping until DUT raises erase_failure_flag.
+//
+// Note: ERASE max-retry give-up (retry_cnt) in RTL is not reachable in this direct-address flow because
+// PROG_COMPLETE clears retry_cnt whenever buffer_idx_reg < weight_count_reg-1 (default 640), so erase
+// retry never accumulates across PROG cycles. Waves still show retry_cnt / prog_retry_cnt from the DUT.
+//------------------------------------------------------------------------------
+
+`timescale 1ns/1ps
+
+import ann_arch_pkg::*;
+import controller_pkg::*;
+import input_buffer_pkg::*;
+import parallel_interface_pkg::*;
+
+module controller_prog_verify_lut_10w_tb;
+
+    localparam int NUM_WEIGHTS   = 10;
+    localparam int CLK_PERIOD    = 5;
+    localparam string WEIGHT_FILE  = "target/Controller/programming_inputs/weight_matrix.txt";
+    localparam string REPORT_FILE  = "target/Controller/prog/prog_verify_10w_report.txt";
+
+    logic clk, rst_n, reset;
+    logic [WORD_WIDTH-1:0] host_data;
+    logic [CMD_WIDTH-1:0]  host_cmd;
+    logic valid;                             // PI valid; host_cmd is pulsed for one cycle -> one-cycle strobe
+    logic [ACT_WIDTH-1:0] data;
+    logic [WEIGHT_ADDR_WIDTH-1:0] address;
+    logic [CMD_WIDTH-1:0] cmd;
+    logic ann_reset, op_done, busy;
+    logic [WORD_WIDTH-1:0] ann_address;
+    logic [2:0] pulses;
+    logic [BUFFER_ADDR_WIDTH-1:0] buf_reg_add;
+    logic [2:0] buf_reg_ctrl;
+    logic buf_read_write;
+    logic [BUF_BIT_SEL_WIDTH-1:0] buf_bit_sel;
+    logic [BUFFER_DATA_WIDTH-1:0] buf_data_out, buf_data;
+    logic [NUM_DATA_LINES-1:0] data_lanes;   // unused here (INF bit-serial lanes)
+    logic dsa_clear, compute_done;           // unused here (INF datapath strobes)
+    logic buf_ready;
+
+    logic [3:0] ann_weight_matrix [0:NUM_PE-1][0:NUM_SA-1][0:SA_ROWS-1][0:SA_COLS-1];
+    logic [3:0] weight_read_data_mock;
+    logic [3:0] actual_from_ann;
+    logic [PE_ID_WIDTH-1:0]  dec_blk;
+    logic [SA_ID_WIDTH-1:0]  dec_sb;
+    logic [ROW_ID_WIDTH-1:0] dec_row;
+    logic [COL_ID_WIDTH-1:0] dec_col;
+
+    always_comb begin
+        ann_address_decode(ann_address, dec_blk, dec_sb, dec_row, dec_col);
+        actual_from_ann = ann_weight_matrix[dec_blk][dec_sb][dec_row][dec_col];
+    end
+
+    logic [3:0] weight_matrix [0:NUM_WEIGHTS-1];
+    logic [WEIGHT_ADDR_WIDTH-1:0] weight_addresses [0:NUM_WEIGHTS-1];
+
+    int current_weight_idx = -1;
+    int verify_cycle_cnt = 0;
+    logic was_in_verify;
+
+    always_ff @(posedge clk) begin
+        was_in_verify <= (pulses == 3'b001) && busy;
+        if (busy && (pulses == 3'b001) && !was_in_verify)
+            verify_cycle_cnt <= verify_cycle_cnt + 1;
+        else if (!busy)
+            verify_cycle_cnt <= 0;
+    end
+
+    logic in_verify_phase;
+    assign in_verify_phase = busy && (pulses == 3'b001 || pulses == 3'b000);
+
+    // Keep idx5 mismatch-active until erase_failure_flag is observed, then release.
+    logic w5_release_under;
+    controller_state_t prev_dut_state;
+    logic w5_seen_erase_exhausted;
+
+    // Scenario map (first row, cols 0..9 of weight_matrix.txt):
+    //   0: equal | 1: read< (re-PROG) | 2: read> (ERASE) | 3-4,6-9: happy
+    //   5: force VERIFY mismatch toward ERASE path until erase retry budget is exhausted, then release
+    always_comb begin
+        weight_read_data_mock = actual_from_ann;
+        if (current_weight_idx >= 0 && in_verify_phase) begin
+            if (current_weight_idx == 1 && verify_cycle_cnt <= 1 && weight_matrix[1] > 0)
+                weight_read_data_mock = weight_matrix[1] - 1;
+            else if (current_weight_idx == 2 && verify_cycle_cnt <= 1 && weight_matrix[2] < 15)
+                weight_read_data_mock = weight_matrix[2] + 1;
+            else if (current_weight_idx == 5 && !w5_release_under)
+                weight_read_data_mock = (weight_matrix[5] == 4'hF) ? 4'hE : (weight_matrix[5] + 1'b1);
+        end
+    end
+
+    parallel_interface u_pi (.clk(clk), .reset(reset), .host_data(host_data), .host_cmd(host_cmd),
+        .valid(valid), .data(data), .address(address), .cmd(cmd));
+
+    ann_controller #(
+        .USE_WEIGHT_PULSE_LUT(1'b1),
+        .WEIGHT_PULSE_LUT_FILE("target/Controller/programming_inputs/weight_pulse_lut.mem")
+    ) dut (
+        .clk(clk), .rst_n(rst_n), .valid(valid), .data(data), .address(address), .cmd(cmd),
+        .ann_reset(ann_reset),
+        .op_done(op_done), .ann_address(ann_address), .pulses(pulses),
+        .weight_read_data(weight_read_data_mock),
+        .buf_reg_add(buf_reg_add), .buf_reg_ctrl(buf_reg_ctrl), .buf_read_write(buf_read_write),
+        .buf_bit_sel(buf_bit_sel),
+        .buf_data_out(buf_data_out), .buf_ready(buf_ready), .buf_data(buf_data),
+        .inf_start(), .dsa_clear(dsa_clear), .tree_start(), .col_sel(), .compute_done(compute_done), .prog_fail(), .op_timeout(), .read_data(), .read_done(), .busy(busy));
+
+    always_ff @(posedge clk) prev_dut_state <= dut.state;
+
+    always_ff @(posedge clk or negedge rst_n) begin
+        if (!rst_n)
+            w5_release_under <= 1'b0;
+        else if (current_weight_idx != 5)
+            w5_release_under <= 1'b0;
+        else if (w5_seen_erase_exhausted)
+            w5_release_under <= 1'b1;
+    end
+
+    always_ff @(posedge clk or negedge rst_n) begin
+        if (!rst_n)
+            w5_seen_erase_exhausted <= 1'b0;
+        else if (current_weight_idx != 5)
+            w5_seen_erase_exhausted <= 1'b0;
+        else if (dut.erase_failure_flag)
+            w5_seen_erase_exhausted <= 1'b1;
+    end
+
+    // Keep retry_cnt accumulation reachable in direct-address flow while idx5 stress case is active.
+    always_ff @(posedge clk or negedge rst_n) begin
+        if (!rst_n) begin
+            release dut.weight_count_reg;
+        end else if (current_weight_idx == 5 && !w5_release_under) begin
+            force dut.weight_count_reg = 1;
+        end else begin
+            release dut.weight_count_reg;
+        end
+    end
+
+    input_buffer u_buf (.clk(clk), .rst_n(rst_n), .data_in(buf_data_out), .ready(buf_ready),
+        .reg_ctrl(buf_reg_ctrl), .buf_read_write(buf_read_write), .buf_reg_add(buf_reg_add),
+        .bit_sel(buf_bit_sel), .buf_data(buf_data),
+        .data_lanes(data_lanes));
+
+    initial clk = 0;
+    always #(CLK_PERIOD/2) clk = ~clk;
+
+    logic in_prog_core_phase;
+    assign in_prog_core_phase = (pulses == PULSE_MODE_PROG) && (buf_reg_ctrl == CTRL_WEIGHT_READ);
+
+    // op_done mock: DUT waits on op_done in PROG_SELECT, PROG_WAIT_ACK, ERASE_SELECT, ERASE_WAIT_ACK.
+    int op_done_cnt;
+    always_ff @(posedge clk or negedge rst_n) begin
+        if (!rst_n) begin
+            op_done <= 0;
+            op_done_cnt <= 0;
+        end else begin
+            if (dut.state == S_PROGRAM && (dut.prog_state == PROG_SELECT || dut.prog_state == PROG_WAIT_ACK)) begin
+                op_done <= 1'b1;
+                op_done_cnt <= 0;
+            end else if (dut.state == S_ERASE && (dut.erase_state == ERASE_SELECT || dut.erase_state == ERASE_WAIT_ACK)) begin
+                op_done <= 1'b1;
+                op_done_cnt <= 0;
+            end else if (busy && (pulses == 3'b001 || pulses == 3'b011 || pulses == 3'b100)) begin
+                if (op_done_cnt >= 3) begin
+                    op_done <= 1;
+                    op_done_cnt <= 0;
+                end else begin
+                    op_done <= 0;
+                    op_done_cnt <= op_done_cnt + 1;
+                end
+            end else begin
+                op_done <= 0;
+                op_done_cnt <= 0;
+            end
+        end
+    end
+
+    always_ff @(posedge clk or negedge rst_n) begin
+        if (!rst_n) begin
+            for (int b = 0; b < NUM_PE; b++)
+                for (int sb = 0; sb < NUM_SA; sb++)
+                    for (int r = 0; r < SA_ROWS; r++)
+                        for (int c = 0; c < SA_COLS; c++)
+                            ann_weight_matrix[b][sb][r][c] <= 4'b0;
+        end else if (in_prog_core_phase) begin
+            automatic logic [PE_ID_WIDTH-1:0]  lb;
+            automatic logic [SA_ID_WIDTH-1:0]  lsb;
+            automatic logic [ROW_ID_WIDTH-1:0] lr;
+            automatic logic [COL_ID_WIDTH-1:0] lc;
+            ann_address_decode(ann_address, lb, lsb, lr, lc);
+            ann_weight_matrix[lb][lsb][lr][lc] <= ann_address[27:24];
+        end
+    end
+
+    //--------------------------------------------------------------------------
+    // Address list: weight idx -> packed {PE,SA,ROW,COL} (ann_arch_pkg::pack_ann_addr)
+    // Hand-picked to span every field range: PE 0..3, SA 0..15, ROW 0..15, COL 0..63.
+    //--------------------------------------------------------------------------
+    function automatic logic [WEIGHT_ADDR_WIDTH-1:0] weight_idx_to_address(int idx);
+        case (idx)
+            0:       return pack_ann_addr(2'd0, 4'd0,  4'd0,  6'd0);    // all-zero corner
+            1:       return pack_ann_addr(2'd1, 4'd3,  4'd7,  6'd12);
+            2:       return pack_ann_addr(2'd2, 4'd9,  4'd2,  6'd40);
+            3:       return pack_ann_addr(2'd3, 4'd15, 4'd15, 6'd63);   // all-max corner
+            4:       return pack_ann_addr(2'd0, 4'd12, 4'd5,  6'd33);
+            5:       return pack_ann_addr(2'd1, 4'd6,  4'd14, 6'd1);
+            6:       return pack_ann_addr(2'd2, 4'd15, 4'd0,  6'd62);
+            7:       return pack_ann_addr(2'd3, 4'd1,  4'd10, 6'd17);
+            8:       return pack_ann_addr(2'd0, 4'd10, 4'd11, 6'd48);
+            default: return pack_ann_addr(2'd3, 4'd5,  4'd8,  6'd7);
+        endcase
+    endfunction
+
+    task automatic load_weights_10();
+        automatic int fh, weight_count = 0;
+        automatic string line;
+        automatic int pos, binary_val, bit_idx, found_binary, bracket_start, bracket_end;
+        automatic int content_start, content_end, weight_in_row;
+
+        fh = $fopen(WEIGHT_FILE, "r");
+        if (fh == 0) begin $error("Cannot open %s", WEIGHT_FILE); $finish; end
+
+        while (!$feof(fh) && weight_count < NUM_WEIGHTS) begin
+            if ($fgets(line, fh) <= 0) continue;
+            if (line.len() > 1 && line[0] == "/" && line[1] == "/") continue;
+            if (line == "[\n" || line == "]\n") continue;
+
+            bracket_start = -1;
+            bracket_end = -1;
+            for (int i = 0; i < line.len(); i++) begin
+                if (line[i] == "[" && bracket_start < 0) bracket_start = i;
+                if (line[i] == "]") begin bracket_end = i; break; end
+            end
+            if (bracket_start < 0 || bracket_end <= bracket_start) continue;
+
+            content_start = bracket_start + 1;
+            content_end = bracket_end - 1;
+            pos = content_start;
+            weight_in_row = 0;
+
+            while (pos <= content_end && weight_in_row < 64 && weight_count < NUM_WEIGHTS) begin
+                while (pos <= content_end && (line[pos] == " " || line[pos] == "\t")) pos++;
+                if (pos > content_end) break;
+                binary_val = 0;
+                found_binary = 0;
+                for (bit_idx = 0; bit_idx < 4 && pos <= content_end; bit_idx++) begin
+                    if (line[pos] == "0") begin binary_val = binary_val << 1; pos++; found_binary = 1; end
+                    else if (line[pos] == "1") begin binary_val = (binary_val << 1) | 1; pos++; found_binary = 1; end
+                    else break;
+                end
+                if (found_binary && bit_idx == 4) begin
+                    weight_matrix[weight_count] = binary_val[3:0];
+                    weight_count++;
+                    weight_in_row++;
+                end else begin
+                    while (pos <= content_end && line[pos] != " " && line[pos] != "\t") pos++;
+                end
+            end
+        end
+        $fclose(fh);
+        if (weight_count != NUM_WEIGHTS) begin
+            $error("Expected %0d weights from first matrix row, got %0d", NUM_WEIGHTS, weight_count);
+            $finish;
+        end
+
+        for (int i = 0; i < NUM_WEIGHTS; i++)
+            weight_addresses[i] = weight_idx_to_address(i);
+
+        $display("[%0t] Loaded %0d weights from %s (row 0, cols 0..%0d; addresses from weight_idx_to_address)",
+                 $time, weight_count, WEIGHT_FILE, NUM_WEIGHTS - 1);
+    endtask
+
+    task send_prog_and_wait(int weight_idx);
+        logic [WORD_WIDTH-1:0] packet;
+        logic [ACT_WIDTH-1:0] wval;
+        logic [WEIGHT_ADDR_WIDTH-1:0] addr;
+        int timeout;
+
+        current_weight_idx = weight_idx;
+        wval = {4'b0, weight_matrix[weight_idx]};
+        addr = weight_addresses[weight_idx];
+        packet = build_host_ann_word(wval, addr);
+
+        // Issue next packet immediately once controller is idle.
+        timeout = 0;
+        while (busy && timeout < 50000) begin
+            @(posedge clk);
+            timeout++;
+        end
+        if (timeout >= 50000) begin
+            $error("Timeout waiting idle before weight %0d", weight_idx);
+            $fatal(1, "Stop: controller did not return idle before next PROG.");
+        end
+
+        // Drive on the falling edge so exactly one rising edge samples valid (one-cycle strobe).
+        @(negedge clk);
+        host_data = packet;
+        host_cmd = CMD_PROG;
+        @(negedge clk);
+        host_cmd = CMD_HIZ;
+        host_data = 0;
+
+        // Wait for command acceptance (busy rises), then operation completion (busy drops).
+        timeout = 0;
+        while (!busy && timeout < 50000) begin
+            @(posedge clk);
+            timeout++;
+        end
+        if (timeout >= 50000) begin
+            $error("Timeout waiting busy high for weight %0d", weight_idx);
+            $fatal(1, "Stop: command was not accepted by DUT.");
+        end
+
+        timeout = 0;
+        while (busy && timeout < 50000) begin
+            @(posedge clk);
+            timeout++;
+        end
+        if (timeout >= 50000) begin
+            $error("Timeout for weight %0d (DUT still busy)", weight_idx);
+            $fatal(1, "Stop: starting the next PROG while busy corrupts later checks.");
+        end
+    endtask
+
+    int fd;
+    int errs;
+    logic [PE_ID_WIDTH-1:0]  blk;
+    logic [SA_ID_WIDTH-1:0]  sb;
+    logic [ROW_ID_WIDTH-1:0] row_id;
+    logic [COL_ID_WIDTH-1:0] col_id;
+
+    initial begin
+        rst_n = 0; reset = 1; host_cmd = CMD_HIZ; host_data = 0;
+        repeat(5) @(posedge clk);
+        rst_n = 1; reset = 0;
+        repeat(5) @(posedge clk);
+
+        load_weights_10();
+
+        fd = $fopen(REPORT_FILE, "w");
+        $fdisplay(fd, "//------------------------------------------------------------------------------");
+        $fdisplay(fd, "// Compact PROG/VERIFY report (%0d weights)", NUM_WEIGHTS);
+        $fdisplay(fd, "// idx0 equal | idx1 read< | idx2 read> | idx3-4,6-9 happy | idx5 force ERASE-retry exhaustion flag");
+        $fdisplay(fd, "//------------------------------------------------------------------------------");
+
+        errs = 0;
+        $display("[%0t] Programming %0d weights...", $time, NUM_WEIGHTS);
+        for (int i = 0; i < NUM_WEIGHTS; i++)
+            send_prog_and_wait(i);
+
+        repeat(5) @(posedge clk);
+
+        for (int i = 0; i < NUM_WEIGHTS; i++) begin
+            logic [WEIGHT_ADDR_WIDTH-1:0] addr;
+            logic [3:0] expected, actual;
+            addr = weight_addresses[i];
+            expected = weight_matrix[i];
+            parse_ann_address(addr, blk, sb, row_id, col_id);
+            actual = ann_weight_matrix[blk][sb][row_id][col_id];
+            if (actual !== expected) begin
+                $fdisplay(fd, "  ERROR idx=%0d addr=0x%04X expected=%0d actual=%0d", i, addr, expected, actual);
+                errs++;
+            end else
+                $fdisplay(fd, "  PASS idx=%0d addr=0x%04X weight=%0d", i, addr, expected);
+        end
+
+        $fdisplay(fd, "//------------------------------------------------------------------------------");
+        $fdisplay(fd, "// Summary: %0d errors", errs);
+        $fdisplay(fd, "//------------------------------------------------------------------------------");
+        begin automatic int fd_save = fd; fd = 0; $fclose(fd_save); end
+
+        if (errs != 0)
+            $error("10w TB: %0d matrix mismatches", errs);
+        $display("[%0t] Done. Report: %s", $time, REPORT_FILE);
+        repeat(10) @(posedge clk);
+        $finish;
+    end
+
+    initial begin
+        #(200000 * CLK_PERIOD);
+        $error("Timeout");
+        $finish;
+    end
+
+endmodule

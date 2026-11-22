@@ -1,0 +1,76 @@
+Reading pref.tcl
+
+# 2025.2
+
+# ** Note: (vsim-220) 'C:/altera/25.1std/questa_fse/win64/../modelsim.ini' is used as the ini file.
+# vsim -c -do "run -all; quit" work.input_buffer_bit_serial_tb 
+# Start time: 18:57:06 on Nov 18,2026
+# ** Note: (vsim-3812) Design is being optimized...
+# ** Note: (vopt-220) 'C:/altera/25.1std/questa_fse/win64/../modelsim.ini' is used as the ini file.
+# ** Warning: (vopt-133) Unable to remove directory "C:/Users/nir.ben-haim/OneDrive - Technion/Desktop/Nir/master/NEMO/NEMO P2/simulator + waves/NEMO_RTL/ann-accelerator-controller/work/@_opt2/_data".
+# ** Warning: (vopt-133) Unable to remove directory "C:/Users/nir.ben-haim/OneDrive - Technion/Desktop/Nir/master/NEMO/NEMO P2/simulator + waves/NEMO_RTL/ann-accelerator-controller/work/@_opt2/_viscom".
+# Access is denied. (GetLastError() = 5)
+# ** Warning: (vopt-133) Unable to remove directory "C:/Users/nir.ben-haim/OneDrive - Technion/Desktop/Nir/master/NEMO/NEMO P2/simulator + waves/NEMO_RTL/ann-accelerator-controller/work/@_opt2".
+# Access is denied. (GetLastError() = 5)
+# ** Note: (vsim-12126) Error and warning message counts have been restored: Errors=0, Warnings=3.
+# //  Questa Altera Starter FPGA Edition-64
+# //  Version 2025.2 win64 May 31 2025
+# //
+# // Unpublished work. Copyright 2025 Siemens
+# //
+# // This material contains trade secrets or otherwise confidential information
+# // owned by Siemens Industry Software Inc. or its affiliates (collectively,
+# // "SISW"), or its licensors. Access to and use of this information is strictly
+# // limited as set forth in the Customer's applicable agreements with SISW.
+# //
+# // This material may not be copied, distributed, or otherwise disclosed outside
+# // of the Customer's facilities without the express written permission of SISW,
+# // and may not be used in any way not expressly authorized by SISW.
+# //
+# Loading sv_std.std
+# Loading work.ann_arch_pkg(fast)
+# Loading work.input_buffer_pkg(fast)
+# Loading work.input_buffer_sv_unit(fast)
+# Loading work.input_buffer_bit_serial_tb_sv_unit(fast)
+# Loading work.input_buffer_bit_serial_tb(fast)
+# run -all
+# ----------------------------------------
+# Input Buffer Bit-Serial (data_lanes) Tests
+# Summary: 256 pixels (16 SA blocks x 16 rows), 256 lanes, 8 bit-planes
+# ----------------------------------------
+# --- Load: entries 0-255 (one block per SA) ---
+# --- COMPUTE: all 256 lanes, bit_sel 0-7, buf_reg_add in {0,77,255} ---
+#   Test: bit_sel=0 (full 256) buf_reg_add=0 | Expected: aaaa5555aaaa5555aaaa5555aaaa5555aaaa5555aaaa5555aaaa5555aaaa5555 | Actual: aaaa5555aaaa5555aaaa5555aaaa5555aaaa5555aaaa5555aaaa5555aaaa5555 | PASS
+#   Test: bit_sel=1 (full 256) buf_reg_add=0 | Expected: cccc999933336666cccc999933336666cccc999933336666cccc999933336666 | Actual: cccc999933336666cccc999933336666cccc999933336666cccc999933336666 | PASS
+#   Test: bit_sel=2 (full 256) buf_reg_add=0 | Expected: 5a5a4b4b69692d2da5a5b4b49696d2d25a5a4b4b69692d2da5a5b4b49696d2d2 | Actual: 5a5a4b4b69692d2da5a5b4b49696d2d25a5a4b4b69692d2da5a5b4b49696d2d2 | PASS
+#   Test: bit_sel=3 (full 256) buf_reg_add=0 | Expected: 39c638c718e71ce39c638c738e71ce31c639c738e718e31c639c738c718e31ce | Actual: 39c638c718e71ce39c638c738e71ce31c639c738e718e31c639c738c718e31ce | PASS
+#   Test: bit_sel=4 (full 256) buf_reg_add=0 | Expected: 5294ad6a52b5a94ad6b5295ad4a56b5a94ad6a52b5ad4a56b5295ad6a52b5a94 | Actual: 5294ad6a52b5a94ad6b5295ad4a56b5a94ad6a52b5ad4a56b5295ad6a52b5a94 | PASS
+#   Test: bit_sel=5 (full 256) buf_reg_add=0 | Expected: 6318ce739cc6318ce739ce6318c6739ce7318c6339ce7398c6319ce739cc6318 | Actual: 6318ce739cc6318ce739ce6318c6739ce7318c6339ce7398c6319ce739cc6318 | PASS
+#   Test: bit_sel=6 (full 256) buf_reg_add=0 | Expected: 7c1f0f83e0f83e0f07c1f07c1f0783e0f83e0f83c1f07c1f07c1e0f83e0f83e0 | Actual: 7c1f0f83e0f83e0f07c1f07c1f0783e0f83e0f83c1f07c1f07c1e0f83e0f83e0 | PASS
+#   Test: bit_sel=7 (full 256) buf_reg_add=0 | Expected: 7fe00ffc00ffc00ff801ff801ff803ff003ff003fe007fe007fe00ffc00ffc00 | Actual: 7fe00ffc00ffc00ff801ff801ff803ff003ff003fe007fe007fe00ffc00ffc00 | PASS
+# --- Lane gating (lanes = 0 outside CTRL_COMPUTE read) ---
+#   Test: lane gating reg_ctrl=IDLE rw=0 | Expected: all lanes 0 | PASS
+#   Test: lane gating reg_ctrl=DATA_LOAD rw=1 | Expected: all lanes 0 | PASS
+#   Test: lane gating reg_ctrl=RESULT_OUT rw=0 | Expected: all lanes 0 | PASS
+#   Test: lane gating reg_ctrl=WEIGHT_READ rw=0 | Expected: all lanes 0 | PASS
+#   Test: lane gating reg_ctrl=COMPUTE(rw=1) rw=1 | Expected: all lanes 0 | PASS
+# --- Overwrite SA 8 (entries 128-143) and recheck all lanes ---
+#   Test: bit_sel=0 (after SA8 overwrite) buf_reg_add=0 | Expected: aaaa5555aaaa5555aaaa5555aaaa5555aaaa5555aaaa5555aaaa5555aaaa5555 | Actual: aaaa5555aaaa5555aaaa5555aaaa5555aaaa5555aaaa5555aaaa5555aaaa5555 | PASS
+#   Test: bit_sel=1 (after SA8 overwrite) buf_reg_add=0 | Expected: cccc999933336666cccc999933336666cccc999933336666cccc999933336666 | Actual: cccc999933336666cccc999933336666cccc999933336666cccc999933336666 | PASS
+#   Test: bit_sel=2 (after SA8 overwrite) buf_reg_add=0 | Expected: 5a5a4b4b69692d2da5a5b4b49696d2d25a5a4b4b69692d2da5a5b4b49696d2d2 | Actual: 5a5a4b4b69692d2da5a5b4b49696d2d25a5a4b4b69692d2da5a5b4b49696d2d2 | PASS
+#   Test: bit_sel=3 (after SA8 overwrite) buf_reg_add=0 | Expected: 39c638c718e71ce39c638c738e71ce31c639c738e718e31c639c738c718e31ce | Actual: 39c638c718e71ce39c638c738e71ce31c639c738e718e31c639c738c718e31ce | PASS
+#   Test: bit_sel=4 (after SA8 overwrite) buf_reg_add=0 | Expected: 5294ad6a52b5a94ad6b5295ad4a5c1f094ad6a52b5ad4a56b5295ad6a52b5a94 | Actual: 5294ad6a52b5a94ad6b5295ad4a5c1f094ad6a52b5ad4a56b5295ad6a52b5a94 | PASS
+#   Test: bit_sel=5 (after SA8 overwrite) buf_reg_add=0 | Expected: 6318ce739cc6318ce739ce6318c6955ae7318c6339ce7398c6319ce739cc6318 | Actual: 6318ce739cc6318ce739ce6318c6955ae7318c6339ce7398c6319ce739cc6318 | PASS
+#   Test: bit_sel=6 (after SA8 overwrite) buf_reg_add=0 | Expected: 7c1f0f83e0f83e0f07c1f07c1f07199cf83e0f83c1f07c1f07c1e0f83e0f83e0 | Actual: 7c1f0f83e0f83e0f07c1f07c1f07199cf83e0f83c1f07c1f07c1e0f83e0f83e0 | PASS
+#   Test: bit_sel=7 (after SA8 overwrite) buf_reg_add=0 | Expected: 7fe00ffc00ffc00ff801ff801ff81e1f003ff003fe007fe007fe00ffc00ffc00 | Actual: 7fe00ffc00ffc00ff801ff801ff81e1f003ff003fe007fe007fe00ffc00ffc00 | PASS
+# 
+# ** Note: $finish    : tb/Input_Buffer/tb/input_buffer_bit_serial_tb.sv(233)
+#    Time: 3240 ns  Iteration: 0  Instance: /input_buffer_bit_serial_tb
+# End time: 18:57:15 on Nov 18,2026, Elapsed time: 0:00:09
+# Errors: 0, Warnings: 3
+# //==============================================================================
+# // TB REPORT  input_buffer_bit_serial_tb
+# // Bit-serial data_lanes: 256 entries x 8 bit-planes, lane gating, SA-block overwrite
+# //==============================================================================
+# SUMMARY: 55 passed, 0 failed
+# RESULT: PASS (bit-serial checks)
