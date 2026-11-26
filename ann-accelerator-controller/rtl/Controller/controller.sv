@@ -28,7 +28,19 @@ module ann_controller #(
     parameter string WEIGHT_PULSE_LUT_FILE = "target/Controller/programming_inputs/weight_pulse_lut.mem",
     // Watchdogs (clk cycles): abort to S_IDLE and raise op_timeout when exceeded
     parameter int OP_DONE_TIMEOUT = controller_pkg::DEFAULT_OP_DONE_TIMEOUT,  // wait for op_done
-    parameter int COLLECT_TIMEOUT = controller_pkg::DEFAULT_COLLECT_TIMEOUT   // gap between pixel beats
+    parameter int COLLECT_TIMEOUT = controller_pkg::DEFAULT_COLLECT_TIMEOUT,  // gap between pixel beats
+    // Pulse generation configuration
+    parameter int TREAD = controller_pkg::TREAD,
+    parameter int TPROG = controller_pkg::TPROG,
+    parameter int TERASE = controller_pkg::TERASE,
+    parameter int TINF = controller_pkg::TINF,
+    parameter int PULSE_GAP = controller_pkg::PULSE_GAP,
+    parameter int PULSE_NUM_READ = controller_pkg::PULSE_NUM_READ,
+    parameter int PULSE_NUM_PROG = controller_pkg::PULSE_NUM_PROG,
+    parameter int PULSE_NUM_ERASE = controller_pkg::PULSE_NUM_ERASE,
+    // The inference sequencer always processes every column and bit plane.
+    parameter int PULSE_NUM_INF = controller_pkg::PULSE_NUM_INF,
+    parameter int MAX_PROG_RETRIES = controller_pkg::MAX_PROG_RETRIES
 ) (
     //======================================================================
     // Global
@@ -104,6 +116,15 @@ module ann_controller #(
     //--------------------------------------------------------------------------
     // Elaboration-time consistency checks
     //--------------------------------------------------------------------------
+    localparam int PROG_RETRY_CNT_WIDTH = (MAX_PROG_RETRIES < 1)
+                                        ? 1 : $clog2(MAX_PROG_RETRIES + 1);
+    localparam int CTRL_PULSE_TOTAL_READ =
+        pulse_train_total(TREAD, PULSE_NUM_READ, PULSE_GAP);
+    localparam int CTRL_PULSE_TOTAL_PROG =
+        pulse_train_total(TPROG, PULSE_NUM_PROG, PULSE_GAP);
+    localparam int CTRL_PULSE_TOTAL_ERASE =
+        pulse_train_total(TERASE, PULSE_NUM_ERASE, PULSE_GAP);
+
     initial begin
         if (ADDR_WIDTH != WEIGHT_ADDR_WIDTH)
             $fatal(1, "ann_controller: ADDR_WIDTH (%0d) must equal ann_arch_pkg::WEIGHT_ADDR_WIDTH (%0d)",
@@ -114,6 +135,20 @@ module ann_controller #(
         if (BUFFER_ADDR_WIDTH > ADDR_WIDTH)
             $fatal(1, "ann_controller: BUFFER_ADDR_WIDTH (%0d) exceeds ADDR_WIDTH (%0d)",
                    BUFFER_ADDR_WIDTH, ADDR_WIDTH);
+        if (TREAD < 1 || TPROG < 1 || TERASE < 1 || TINF < 1 ||
+            PULSE_NUM_READ < 1 || PULSE_NUM_PROG < 1 || PULSE_NUM_ERASE < 1 ||
+            PULSE_GAP < 0)
+            $fatal(1, "ann_controller: pulse widths/counts must be positive and PULSE_GAP non-negative");
+        if (CTRL_PULSE_TOTAL_READ > 255 || CTRL_PULSE_TOTAL_PROG > 255 ||
+            CTRL_PULSE_TOTAL_ERASE > 255)
+            $fatal(1, "ann_controller: READ/PROG/ERASE pulse trains must fit the 8-bit pulse counter");
+        if (TINF + T_INF_TREE + T_INF_SHIFT + T_INF_DRIVE > 255)
+            $fatal(1, "ann_controller: TINF exceeds the inference cycle counter range");
+        if (PULSE_NUM_INF != NUM_COL_POS * ACT_WIDTH)
+            $fatal(1, "ann_controller: PULSE_NUM_INF (%0d) must match the fixed inference schedule (%0d)",
+                   PULSE_NUM_INF, NUM_COL_POS * ACT_WIDTH);
+        if (MAX_PROG_RETRIES < 0)
+            $fatal(1, "ann_controller: MAX_PROG_RETRIES must be non-negative");
     end
 
     //--------------------------------------------------------------------------
@@ -143,7 +178,7 @@ module ann_controller #(
     logic [1:0] retry_cnt;
 
     // Re-program counter: PROG retries without ERASE when read < expected (0..MAX_PROG_RETRIES)
-    logic [1:0] prog_retry_cnt;
+    logic [PROG_RETRY_CNT_WIDTH-1:0] prog_retry_cnt;
 
     // S_VERIFY read pulse train: VERIFY_IDLE is cycle 0; VERIFY_WAIT uses verify_pulse_idx 1..PULSE_TOTAL_READ-1
     logic [7:0] verify_pulse_idx;
@@ -194,9 +229,13 @@ module ann_controller #(
     //--------------------------------------------------------------------------
     // S_COMPUTE sequencer: column position (outer) x bit-step (inner, MSB first)
     //--------------------------------------------------------------------------
+    localparam int INF_STEP_CYCLES = TINF + T_INF_TREE + T_INF_SHIFT + T_INF_DRIVE;
+    localparam int INF_CYC_PARAM_WIDTH =
+        $clog2((INF_STEP_CYCLES > T_COL_BND) ? INF_STEP_CYCLES : T_COL_BND);
+
     logic [COL_SEL_WIDTH-1:0]     col_cnt;     // current column position k (0..15)
     logic [BUF_BIT_SEL_WIDTH-1:0] step_cnt;    // bit-step within the column (0..7); plane = 7 - step_cnt
-    logic [INF_CYC_WIDTH-1:0]     inf_cyc;     // cycle within the bit-step (0..15) or the boundary (0..7)
+    logic [INF_CYC_PARAM_WIDTH-1:0] inf_cyc;   // cycle within the bit-step or the boundary
     logic                         inf_bnd;     // 1 = in the column boundary (after the 8th bit-step)
 
     logic [BUF_BIT_SEL_WIDTH-1:0] cur_plane;   // plane of the current bit-step
@@ -214,11 +253,11 @@ module ann_controller #(
     assign cur_plane    = PLANE_MSB - step_cnt;                          // 7, 6, ..., 0
     assign next_plane   = (step_cnt == PLANE_MSB) ? PLANE_MSB            // after b0: b7 of the next column
                                                   : cur_plane - 1'b1;
-    assign step_last    = !inf_bnd && (inf_cyc == INF_CYC_WIDTH'(T_INF_STEP - 1));
-    assign bnd_last     =  inf_bnd && (inf_cyc == INF_CYC_WIDTH'(T_COL_BND - 1));
+    assign step_last    = !inf_bnd && (inf_cyc == INF_CYC_PARAM_WIDTH'(INF_STEP_CYCLES - 1));
+    assign bnd_last     =  inf_bnd && (inf_cyc == INF_CYC_PARAM_WIDTH'(T_COL_BND - 1));
     assign col_last     = (col_cnt == COL_SEL_WIDTH'(NUM_COL_POS - 1));
     assign compute_last = in_compute && bnd_last && col_last;
-    assign inf_read     = in_compute && !inf_bnd && (inf_cyc < INF_CYC_WIDTH'(T_INF_SETTLE + T_INF_ADC));
+    assign inf_read     = in_compute && !inf_bnd && (inf_cyc < INF_CYC_PARAM_WIDTH'(TINF));
 
     //--------------------------------------------------------------------------
     // Pulse Timing (per spec: T*N cycles per mode)
@@ -302,7 +341,7 @@ module ann_controller #(
         automatic int Np;
         pulse_total = 8'd0;
         if (state == S_READ)
-            pulse_total = PULSE_TOTAL_READ[7:0];
+            pulse_total = CTRL_PULSE_TOTAL_READ[7:0];
         else if (state == S_PROGRAM && prog_state == PROG_WRITE) begin
             if (!USE_WEIGHT_PULSE_LUT) begin
                 Tp = TPROG;
@@ -324,7 +363,7 @@ module ann_controller #(
             end
         end
         else if (state == S_ERASE && erase_state == ERASE_PULSE)
-            pulse_total = PULSE_TOTAL_ERASE[7:0];
+            pulse_total = CTRL_PULSE_TOTAL_ERASE[7:0];
         // S_COMPUTE has its own sequencer (col_cnt / step_cnt / inf_cyc)
 
         pulse_done = (pulse_total > 8'd0) && (pulse_cnt >= pulse_total - 1'b1);
@@ -426,7 +465,7 @@ module ann_controller #(
     //               accumulator per tree (4 per PE), reused for each column,
     //               so it is cleared 16 times per inference, before the first
     //               tree result of the column (cycle 14).
-    // tree_start  : cycle INF_TREE_START_CYC of every bit-step, when the ADC
+    // tree_start  : cycle TINF of every bit-step, when the ADC
     //               codes of the current plane are valid (128 per inference).
     // col_sel     : column position k for the whole column; during the last
     //               T_COL_ADV boundary cycles it already shows k+1 so the mux
@@ -434,10 +473,10 @@ module ann_controller #(
     // compute_done: last cycle of S_COMPUTE.
     assign inf_start    = (state == S_COLLECT_DATA) && valid && last_pixel;
     assign dsa_clear    = in_compute && !inf_bnd && (step_cnt == '0) && (inf_cyc == '0);
-    assign tree_start   = in_compute && !inf_bnd && (inf_cyc == INF_CYC_WIDTH'(INF_TREE_START_CYC));
+    assign tree_start   = in_compute && !inf_bnd && (inf_cyc == INF_CYC_PARAM_WIDTH'(TINF));
     assign col_sel      = !in_compute ? '0 :
                           (inf_bnd && !col_last &&
-                           inf_cyc >= INF_CYC_WIDTH'(T_COL_ACT + T_COL_WB)) ? col_cnt + 1'b1 : col_cnt;
+                           inf_cyc >= INF_CYC_PARAM_WIDTH'(T_COL_ACT + T_COL_WB)) ? col_cnt + 1'b1 : col_cnt;
     assign compute_done = compute_last;
 
     //--------------------------------------------------------------------------
@@ -640,21 +679,21 @@ module ann_controller #(
             // -------- retry_cnt and prog_retry_cnt: reset on success (VERIFY_DONE) --------
             if (state == S_VERIFY && verify_state == VERIFY_DONE) begin
                 retry_cnt      <= 2'd0;
-                prog_retry_cnt <= 2'd0;
+                prog_retry_cnt <= '0;
                 program_stronger <= 1'b0;
             end
             // -------- prog_retry_cnt: increment when re-progging without ERASE --------
-            else if (state == S_VERIFY && verify_state == VERIFY_CHECK && weight_read_data < expected_weight && prog_retry_cnt < controller_pkg::MAX_PROG_RETRIES) begin
+            else if (state == S_VERIFY && verify_state == VERIFY_CHECK && weight_read_data < expected_weight && prog_retry_cnt < MAX_PROG_RETRIES) begin
                 prog_retry_cnt <= prog_retry_cnt + 1'b1;
             end
             // -------- prog_retry_cnt: reset when going to ERASE (over-programmed or max re-prog exceeded) --------
-            else if (state == S_VERIFY && verify_state == VERIFY_CHECK && (weight_read_data > expected_weight || prog_retry_cnt >= controller_pkg::MAX_PROG_RETRIES)) begin
-                prog_retry_cnt <= 2'd0;
+            else if (state == S_VERIFY && verify_state == VERIFY_CHECK && (weight_read_data > expected_weight || prog_retry_cnt >= MAX_PROG_RETRIES)) begin
+                prog_retry_cnt <= '0;
             end
             // -------- retry_cnt: increment on ERASE_COMPLETE; prog_retry_cnt reset --------
             else if (state == S_ERASE && erase_state == ERASE_COMPLETE) begin
                 retry_cnt      <= retry_cnt + 1'b1;
-                prog_retry_cnt <= 2'd0;
+                prog_retry_cnt <= '0;
             end
             // -------- all retry state: fresh for every host command --------
             // (The former legacy clear at PROG_COMPLETE was removed: it reset
@@ -662,7 +701,7 @@ module ann_controller #(
             //  never be reached and a cell that never verifies looped forever.)
             else if (state == S_IDLE) begin
                 retry_cnt        <= 2'd0;
-                prog_retry_cnt   <= 2'd0;
+                prog_retry_cnt   <= '0;
                 program_stronger <= 1'b0;
             end
 
@@ -835,7 +874,7 @@ module ann_controller #(
                 unique case (verify_state)
                     VERIFY_IDLE: begin
                         // Initiate read; single-cycle train skips WAIT
-                        if (PULSE_TOTAL_READ <= 8'd1)
+                        if (CTRL_PULSE_TOTAL_READ <= 1)
                             verify_next = VERIFY_CHECK;
                         else
                             verify_next = VERIFY_WAIT;
@@ -843,7 +882,7 @@ module ann_controller #(
                     
                     VERIFY_WAIT: begin
                         // One cycle per burst-train index (see verify_pulse_idx seq block)
-                        if (verify_pulse_idx == PULSE_TOTAL_READ[7:0] - 8'd1)
+                        if (verify_pulse_idx == CTRL_PULSE_TOTAL_READ[7:0] - 8'd1)
                             verify_next = VERIFY_CHECK;
                         else
                             verify_next = VERIFY_WAIT;
@@ -855,7 +894,7 @@ module ann_controller #(
                             verify_next = VERIFY_DONE;  // Match: continue to next weight
                         end else if (weight_read_data < expected_weight) begin
                             // Under-programmed: re-apply PROG pulses (no ERASE)
-                            if (prog_retry_cnt < controller_pkg::MAX_PROG_RETRIES) begin
+                            if (prog_retry_cnt < MAX_PROG_RETRIES) begin
                                 next_state = S_PROGRAM;
                                 next_prog_state = PROG_HIZ;
                             end else begin

@@ -48,7 +48,7 @@
 //       cleared when the next command is accepted.
 //  [23] READ result returned to the host: the response to the frame that
 //       follows a READ frame is {8'h00, addr[15:0], data[7:0], status}.
-//  [24] Controller watchdogs (OP_DONE_TIMEOUT / COLLECT_TIMEOUT) exposed as
+//  [24] Controller watchdogs and pulse-generation/retry settings exposed as
 //       wrapper parameters.
 //
 //  CHANGES from Controller_vs_datapath_review (Roman, 2026-11-16)
@@ -136,7 +136,19 @@ module nemo_top_wrapper #(
         "ann-accelerator-controller/target/Controller/programming_inputs/weight_pulse_lut.mem",
     // Controller watchdogs in clk cycles (FIX #24)
     parameter int OP_DONE_TIMEOUT = controller_pkg::DEFAULT_OP_DONE_TIMEOUT,  // analog op_done wait
-    parameter int COLLECT_TIMEOUT = controller_pkg::DEFAULT_COLLECT_TIMEOUT   // gap between pixel frames
+    parameter int COLLECT_TIMEOUT = controller_pkg::DEFAULT_COLLECT_TIMEOUT,  // gap between pixel frames
+    // Pulse generation parameters (defaults from controller_pkg)
+    parameter int TREAD = controller_pkg::TREAD,
+    parameter int TPROG = controller_pkg::TPROG,
+    parameter int TERASE = controller_pkg::TERASE,
+    parameter int TINF = controller_pkg::TINF,
+    parameter int PULSE_GAP = controller_pkg::PULSE_GAP,
+    parameter int PULSE_NUM_READ = controller_pkg::PULSE_NUM_READ,
+    parameter int PULSE_NUM_PROG = controller_pkg::PULSE_NUM_PROG,
+    parameter int PULSE_NUM_ERASE = controller_pkg::PULSE_NUM_ERASE,
+    // Inference pulse count is fixed by the column x bit-plane schedule.
+    parameter int PULSE_NUM_INF = controller_pkg::PULSE_NUM_INF,
+    parameter int MAX_PROG_RETRIES = controller_pkg::MAX_PROG_RETRIES
     // (ADC_DELAY removed in Rev 5: the ADC conversion time is the controller's
     //  T_INF_SETTLE + T_INF_ADC per bit-step, see controller_pkg)
 ) (
@@ -479,7 +491,17 @@ module nemo_top_wrapper #(
         .USE_WEIGHT_PULSE_LUT (1'b1),
         .WEIGHT_PULSE_LUT_FILE(WEIGHT_PULSE_LUT_FILE),
         .OP_DONE_TIMEOUT      (OP_DONE_TIMEOUT),
-        .COLLECT_TIMEOUT      (COLLECT_TIMEOUT)
+        .COLLECT_TIMEOUT      (COLLECT_TIMEOUT),
+        .TREAD                (TREAD),
+        .TPROG                (TPROG),
+        .TERASE               (TERASE),
+        .TINF                 (TINF),
+        .PULSE_GAP            (PULSE_GAP),
+        .PULSE_NUM_READ       (PULSE_NUM_READ),
+        .PULSE_NUM_PROG       (PULSE_NUM_PROG),
+        .PULSE_NUM_ERASE      (PULSE_NUM_ERASE),
+        .PULSE_NUM_INF        (PULSE_NUM_INF),
+        .MAX_PROG_RETRIES     (MAX_PROG_RETRIES)
     ) u_ann_controller (
         .clk              (clk),
         .rst_n            (rst_n_clk),

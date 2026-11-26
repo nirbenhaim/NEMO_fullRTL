@@ -180,7 +180,11 @@ Architecture (from `ann_arch_pkg`, matches `nemo_top_wrapper.sv` and the
 Host word / `ann_address` (32 bits): `[31:24]` data byte, `[23:8]` packed
 address, `[7:0]` reserved (must be 0). The SPI frame adds `cmd[2:0]` below it.
 
-Controller (`controller_pkg` / `ann_controller` parameters):
+Controller (`controller_pkg` / `ann_controller` parameters). The pulse widths,
+READ/PROG/ERASE counts, `PULSE_GAP`, `TINF`, and `MAX_PROG_RETRIES` are exposed
+as `nemo_top_wrapper` parameters and passed to `ann_controller`. `PULSE_NUM_INF`
+is also exposed, but must equal the fixed schedule size
+(`NUM_COL_POS * ACT_WIDTH`, 128 with the current architecture).
 
 | Parameter | Value | Meaning |
 |-----------|-------|---------|
@@ -189,6 +193,8 @@ Controller (`controller_pkg` / `ann_controller` parameters):
 | `TREAD/TERASE` | 2 | Pulse width (cycles) per burst |
 | `TPROG` | 5 | Program pulse width |
 | `TINF` | 10 | INF pulse width per bit-step (array settle 2 + ADC conversion 8) |
+| `PULSE_NUM_READ/PROG/ERASE` | 1 / 1 / 1 | Number of bursts per operation |
+| `PULSE_NUM_INF` | 128 | One INF pulse per bit-step in the fixed inference schedule |
 | `T_INF_STEP` / `T_COL_BND` / `T_INF_COLUMN` | 16 / 8 / 136 | Bit-step, column boundary and column length (cycles) |
 | `T_INF_COMPUTE` | 2176 | `S_COMPUTE` length = 16 × 136 (NEMO CS-IMC Architecture Brief Rev. 1.0, Table 7) |
 | `PULSE_GAP` | 1 | Idle cycles between bursts |
